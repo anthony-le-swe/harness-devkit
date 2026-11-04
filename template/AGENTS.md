@@ -1,12 +1,12 @@
-# Codex AI Software Team — operational contract
+# AI Software Team (Codex + Claude Code) — shared operational contract
 
 Read `SECURITY.md`, `tracking/state.json`, `tracking/handoff.json`, `docs/SESSION_HANDOFF.md`, `tracking/events.jsonl`, `docs/decisions/` and `git status --short` at the beginning of each run. The project is NOT automatically approved for implementation: first establish a scoped, approved backlog and ADRs. Never infer approval from tool availability.
 
 ## Roles and orchestration
 
-- Main agent is Tech Lead / Orchestrator (`gpt-6.1-sol`, high). Own scheduling, dependencies, integration and persisted status; favor smaller workers for bounded tasks.
+- Main agent is Tech Lead / Orchestrator. On Codex its configured model is in `.codex/config.toml`; on Claude Code select Opus for main planning and use `.claude/agents/*.md` for specialist model tiers. Own scheduling, dependencies, integration and persisted status; favor smaller workers for bounded tasks.
 - `po`, `architect` and `designer` refine scope, requirements and system design.
-- `repo_explorer`, `frontend_dev`, `backend_dev` inspect and implement scoped changes.
+- `repo_explorer`, `frontend_dev`, `backend_dev` inspect and implement scoped changes (Claude Code hyphenates them to `repo-explorer`, `frontend-dev`, `backend-dev`).
 - `qa` independently executes/tests against acceptance criteria; `reviewer` independently audits diff, architecture, security and QA evidence.
 - Do not let agents simultaneously edit the same files. QA and reviewer must be distinct from implementer and from each other for every implementation task.
 
@@ -33,4 +33,4 @@ Orchestrator is the only tracker writer; subagents return results, owner request
 
 ## Security / automation
 
-Write only inside this project. No elevated sandbox, cross-project file changes, arbitrary network access, secret exposure, forced Git operations, auto deployment or destructive commands. Approvals to normal commit/push do not imply permission to weaken workspace limits. Safety review takes priority over speed. Report only tests actually run and outcomes actually observed. Keep dashboard updated from tracker data (snapshot, not live telemetry). Scheduling/24-7 operation requires Codex App automation and available quota; never claim template setup makes it perpetual.
+Write only inside this project. No elevated sandbox, cross-project file changes, arbitrary network access, secret exposure, forced Git operations, auto deployment or destructive commands. Approvals to normal commit/push do not imply permission to weaken workspace limits. Safety review takes priority over speed. Report only tests actually run and outcomes actually observed. Keep dashboard updated from tracker data (snapshot, not live telemetry). Scheduling/24-7 operation requires a platform-specific scheduler and available quota; never claim template setup makes it perpetual.

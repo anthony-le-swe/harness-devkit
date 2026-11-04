@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the Codex harness into a new or existing project without overwrites.
+"""Install the Codex + Claude Code harness without overwrites.
 
 Usage: py -3 init.py new D:\\Projects\\my-app --name "My App"
        py -3 init.py install D:\\Projects\\existing-app --name "Existing App"
@@ -36,21 +36,28 @@ def verify_destination(raw: str) -> Path:
     return resolved
 
 
-def collect_files() -> dict[str, bytes]:
+def collect_files(platform: str = "both") -> dict[str, bytes]:
+    if platform not in {"both", "codex", "claude"}:
+        raise ValueError("Unsupported platform")
     files = {}
     for item in TEMPLATE.rglob("*"):
         if is_link(item):
             raise ValueError(f"Refusing template symlink/junction: {item}")
         if not item.is_file() or any(x in SKIP for x in item.parts):
             continue
-        files[item.relative_to(TEMPLATE).as_posix()] = item.read_bytes()
+        rel = item.relative_to(TEMPLATE).as_posix()
+        if platform == "codex" and (rel.startswith(".claude/") or rel in {"CLAUDE.md", "START-CLAUDE.md"}):
+            continue
+        if platform == "claude" and (rel.startswith(".codex/") or rel == "START-CODEX.md"):
+            continue
+        files[rel] = item.read_bytes()
     if not files:
         raise ValueError("Template files missing")
     return files
 
 
-def setup(dest: Path, name: str, mode: str, init_git: bool) -> None:
-    files = collect_files()
+def setup(dest: Path, name: str, mode: str, init_git: bool, platform: str = "both") -> None:
+    files = collect_files(platform)
     if mode == "new" and dest.exists() and any(dest.iterdir()):
         raise ValueError("New destination is not empty. Use install for existing project (no overwrites).")
     if mode == "install" and not dest.is_dir():
@@ -90,23 +97,24 @@ def setup(dest: Path, name: str, mode: str, init_git: bool) -> None:
             print("Initialized local Git repository (no commit/push performed).")
         except (FileNotFoundError, subprocess.CalledProcessError) as exc:
             print(f"Git init skipped: {exc}", file=sys.stderr)
-    print(f"Harness installed in {dest} ({len(files)} files)")
-    print(f"Next: open this folder in Codex Desktop; run py -3 tools/project_control.py dashboard")
-    print("Then read START-CODEX.md and start the Orchestrator thread.")
+    print(f"Harness installed in {dest} ({len(files)} files; platform={platform})")
+    print("Next: run py -3 tools/project_control.py dashboard")
+    print("Then read START-CODEX.md or START-CLAUDE.md for your chosen platform.")
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Initialize reusable Codex AI team in a project")
+    p = argparse.ArgumentParser(description="Initialize reusable Codex and Claude Code AI team")
     sub = p.add_subparsers(dest="command", required=True)
     for command in ("new", "install"):
         sp = sub.add_parser(command)
         sp.add_argument("project_path")
         sp.add_argument("--name", default=None)
         sp.add_argument("--no-git", action="store_true", help="Do not run git init")
+        sp.add_argument("--platform", choices=["both", "codex", "claude"], default="both", help="Which client config to install")
     a = p.parse_args()
     try:
         dest = verify_destination(a.project_path)
-        setup(dest, a.name or dest.name, a.command, not a.no_git)
+        setup(dest, a.name or dest.name, a.command, not a.no_git, a.platform)
     except (OSError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

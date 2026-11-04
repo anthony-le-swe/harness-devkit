@@ -11,3 +11,9 @@
 - Git commits are not backups until pushed; remote pushes are not a substitute for secrets scanning or independent QA.
 - Tracker CLI's `--actor` field is self-reported, not an identity-verified approval. Independent agent execution and evidence must be checked in thread history.
 - A checkpoint stores saved state, not unsaved agent thoughts. Automated execution depends on runtime, quota, available tasks and configured scheduling; template installation alone does not run 24/7.
+
+## Claude Code security notes
+
+Claude Code uses `.claude/settings.json` for project permission defaults, and supports `.claude/agents/*.md`; neither `CLAUDE.md` nor the tracking CLI can prevent all host file access. On Windows **native Windows Claude Code has no OS-level Bash sandbox**; for a stronger workspace boundary run within WSL2 with `/sandbox` enabled and unsandboxed fallback disabled, or use a VM/container with only the project mounted. Check actual runtime settings; project permission rules alone are not a hard filesystem boundary. Do not enable `--dangerously-skip-permissions` / bypass mode.
+
+Both Codex and Claude share the same `tracking/` and `docs/` writes. Never run two orchestrators against the **same working tree** concurrently. The tracker has no concurrency lock or authenticated QA identities; separate branches/worktrees and reconcile before merging if using both tools in parallel.

@@ -1,69 +1,80 @@
-# Harness Devkit — portable Codex AI Software Team
+# Harness Devkit — Codex + Claude Code multi-agent team
 
-Reusable starter for **Codex Desktop App**, with lead + specialist subagents, independent QA/Reviewer gate, decision records, quota-safe handoff, local dashboard, and sandbox-aware workspace instructions.
+Portable developer-agent harness for **Codex Desktop** and **Claude Code** (CLI or Claude Desktop Code tab). Both clients use the same project tracker, QA+Reviewer gate, decision log, session handoff and snapshot dashboard. Only the native agent configurations differ.
 
-## Quick start — NEW project (Windows PowerShell)
+## Quick start on Windows (new project)
 
 ```powershell
 git clone https://github.com/anthony-le-swe/harness-devkit.git
 cd harness-devkit
-py -3 init.py new "D:\Projects\my-new-app" --name "My New App"
+py -3 init.py new "D:\Projects\my-app" --name "My App" --platform both
 ```
 
-Then open **`D:\Projects\my-new-app`** in Codex Desktop App (Local, trusted workspace). The init command creates a local Git repo when Git is installed, **but does not commit, push, create a remote, start Codex or schedule automation**.
+Or choose one client with `--platform claude` or `--platform codex`. `both` is the default. Each project gets fresh tracking state; initializer can run `git init` locally but never commits or pushes automatically.
+
+**Claude:** Open the new project root in Claude Code (Claude Desktop **Code** tab or CLI `claude`), read `START-CLAUDE.md`, select `/model opus` for the lead, check `/agents`, `/permissions`, `/context`. Subagents come from `.claude/agents/*.md`. Claude Code reads `CLAUDE.md`, which imports `AGENTS.md` and `SECURITY.md`.
+
+**Codex:** Open the project root in Codex Desktop App, check permissions and custom agents, and read `START-CODEX.md`. Subagents come from `.codex/agents/*.toml`.
+
+**Existing project** (non-overwrite):
 
 ```powershell
-cd D:\Projects\my-new-app
+py -3 init.py install "D:\Projects\existing-app" --name "Existing App" --platform both
+```
+
+The installer preflights all paths and refuses collisions, junctions, and symlink escapes. It will never replace an existing config or tracker automatically. For an existing Codex harness, a reviewed manual merge of Claude-specific files is required.
+
+## Shared workflow
+
+```text
+Owner approves scope and significant ADRs once
+     ↓
+Tech Lead chooses approved unblocked task
+     ↓
+Developer implements + submits current revision
+     ↓
+Independent QA PASS
+     ↓
+Independent Reviewer APPROVED
+     ↓
+Tracker Done → diff/secret check → normal commit/push → checkpoint → next task
+```
+
+The tracker **rejects Done without both gates on the current revision**, and invalidates gates for a new revision. Evidence and actor IDs are self-reported, so this is workflow validation, **not authenticated approval or sandbox enforcement**. Do not run Codex and Claude orchestrators concurrently against the same working tree: state files lack locking.
+
+## Local dashboard, handoff and tests
+
+```powershell
+cd D:\Projects\my-app
 py -3 tools\project_control.py validate
 py -3 tools\project_control.py dashboard
 start dashboard\index.html
+py -3 tools\project_control.py resume
 ```
 
-Read `START-CODEX.md` and paste its starter prompt into a NEW Codex thread. Approve initial project scope/ADRs once; afterward the team can process approved backlog tasks sequentially without asking for routine task-by-task approval.
+Project code and status belong to that new repository, not harness-devkit. The dashboard is an offline snapshot. All project history persists in `tracking/` and `docs/`. Neither Claude nor Codex auto-restarts after quota resets just because it has these files.
 
-## Install in an EXISTING project (no overwrite)
+### Safety on Windows
 
-```powershell
-py -3 init.py install "D:\Projects\existing-app" --name "Existing App"
-```
+**Native Windows Claude Code does not support Claude's OS-level Bash sandbox.** For strict filesystem isolation, run Claude Code in WSL2 with sandbox enabled or in an isolated VM/container with only the project mounted. `.claude/settings.json` defaults to regular permissions, no extra working directories and disallows bypass; instructions and tracker checks alone cannot prevent arbitrary external writes. Review MCP/tools and the actual effective permissions. The Codex workspace-write setting is also not an absolute OS isolation guarantee. Git push requires configured auth and network permission.
 
-The installer **preflights every destination path and refuses any file collision**; it never overwrites existing configuration, source, tracking, decisions or `.git`. If conflicts exist, perform a reviewed manual merge. Destination symlinks/junctions and attempting to install within harness-devkit are refused. No files are deleted by the installer.
+## Components
 
-## What gets installed?
+| Files | Role |
+|---|---|
+| `AGENTS.md`, `SECURITY.md` | Shared policy and safety model |
+| `CLAUDE.md`, `.claude/agents/*.md`, `.claude/settings.json` | Claude Code instructions, eight native subagents, permission defaults |
+| `.codex/config.toml`, `.codex/agents/*.toml` | Codex models, agents and sandbox settings |
+| `tools/project_control.py` | Enforced QA/Reviewer workflow, ADR/event/checkpoint CLI, dashboard |
+| `tracking/`, `docs/` | Per-project backlog, decisions, events, quota-safe handoff |
+| `START-CLAUDE.md`, `START-CODEX.md` | Platform-specific starter and resume prompts |
 
-| File | Purpose |
-| --- | --- |
-| `AGENTS.md` | Team operating contract, scope/security and autonomous task loop |
-| `.codex/config.toml` | High-capability lead, lower-cost default workers, restrictive workspace sandbox |
-| `.codex/agents/*.toml` | 8 project-scoped agents: PO, Architect, Designer, Repo Explorer, Frontend, Backend, QA, Reviewer |
-| `tools/project_control.py` | Task lifecycle, **two independent required quality gates**, ADRs, event history, safe checkpoints, dashboard generation |
-| `tracking/state.json` | Canonical task + decision ledger (fresh per project) |
-| `tracking/events.jsonl` | Chronological append-only-by-convention events |
-| `tracking/handoff.json`, `docs/SESSION_HANDOFF.md` | Quota-safe resume state |
-| `docs/PROJECT_STATUS.md`, `dashboard/index.html` | Human-readable progress and offline visual dashboard |
-| `SECURITY.md`, `docs/WORKFLOW.md`, `START-CODEX.md` | Security model, commands, setup and resume prompt |
+Claude model tiers: choose **Opus** for main Tech Lead and Architect/Reviewer; **Sonnet** for developers, QA, PO/Designer; **Haiku** for Repo Explorer. Model alias availability depends on account/org, and runtime selections may override frontmatter. Verify inside Claude Code rather than assuming a configured alias was used.
 
-Agent model defaults: main `gpt-6.1-sol` high; PO, Architect and Reviewer use Sol; Developers, QA, Designer and Explorer use `gpt-6-luna`. Model availability is account-dependent. If your account does not support one, edit `.codex` configuration to a supported model and verify the runtime selection in Codex App.
-
-## Quality gates (enforced in tracker)
-
-`Todo → In progress → Submit revision → QA PASS → Reviewer APPROVED → Done → Commit → Push → Checkpoint → Next task`
-
-The tracker rejects Done without QA+Reviewer evidence on the same current revision; QA, Reviewer, implementer must be different named actors. Fixes after QA require `task-submit` on a new revision, resetting both gates. See [`template/docs/WORKFLOW.md`](template/docs/WORKFLOW.md) for commands. This is a workflow gate, not identity authentication: a caller could lie about evidence, so independent thread records remain important.
-
-## Safety, Git and autonomy limits
-
-- `workspace-write` restricts sandboxed command writes but **does not provide hard OS-level isolation**. For a literal guarantee of no changes outside project, run Codex in a VM/container mounted only with project files. See [template/SECURITY.md](template/SECURITY.md).
-- Command network is **disabled by default**. For autonomous `git push`, you must explicitly configure a trusted Git/network path and a remote on each new project, accept the expanded network exposure, and verify auth/sandbox behavior.
-- Normal commit/push to the authorized remote is permitted after gates; force-push, destructive cleanup, deleting files, leaking secrets and production deployment are not.
-- This package stores checkpoints and a resume plan; **it will not itself run 24/7 or restart when quotas refresh**. Scheduled Codex App automation is a separate optional setup.
-- Dashboard is a **snapshot**, not live background telemetry. Rebuild with `py -3 tools/project_control.py dashboard` and refresh browser.
-- Task/ADR approval is self-reported by the CLI, not a cryptographic identity check. Human must approve scope and architecture changes.
-
-## Self-test the template
+## Template self-test
 
 ```powershell
 py -3 -m unittest discover -s tests -v
 ```
 
-Tests use a fresh `tests/.scratch/` fixture each time and **never clean up fixtures**. They do not change real user projects. See [Codex subagent docs](https://learn.chatgpt.com/docs/agent-configuration/subagents) and [Codex config reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+Test fixtures stay under `tests/.scratch/` (no automatic cleanup). See [Claude Code subagents](https://code.claude.com/docs/en/sub-agents), [Claude Code memory](https://code.claude.com/docs/en/memory) and [Claude Code sandbox](https://code.claude.com/docs/en/sandboxing).

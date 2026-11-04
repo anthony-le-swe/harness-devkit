@@ -31,3 +31,7 @@ py -3 tools/project_control.py dashboard
 `init-handoff` will REFUSE if EITHER `tracking/handoff.json` or `docs/SESSION_HANDOFF.md` exists, even invalid, `{}`, empty or partial. Explicit `checkpoint` replaces handoff with backups. Do not use init-handoff as a repair tool.
 
 Dashboard is a static snapshot. Refresh after running `dashboard`. It shows task counts, QA/review statuses, decisions and checkpoint; it does not show live token consumption or automatically run agents.
+
+## Switching between Codex and Claude Code
+
+Both clients operate on the **same** task / ADR / handoff / event data. Start only one orchestrator at a time for a single checkout. Before switching platform, require the current session to save a checkpoint and confirm `git status`; then launch the other platform, read `AGENTS.md` (`CLAUDE.md` imports it) and run `resume`, `validate`, inspect Git and tests. Never assume a task is Done simply because a transcript says so. Claude Code has `.claude/agents` native roles, Codex has `.codex/agents`; both use the same gate enforcement in `tools/project_control.py`.

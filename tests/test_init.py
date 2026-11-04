@@ -21,6 +21,36 @@ class InitializationTests(unittest.TestCase):
         self.assertIn('Fresh Project',(self.target/'tracking/state.json').read_text(encoding='utf-8'))
         self.assertFalse((self.target/'.git').exists())
 
+    def test_default_both_installs_claude_and_codex(self):
+        init.setup(self.target, 'Both', 'new', False)
+        self.assertTrue((self.target/'CLAUDE.md').exists())
+        self.assertTrue((self.target/'.claude/agents/qa.md').exists())
+        self.assertTrue((self.target/'.codex/agents/qa.toml').exists())
+        self.assertTrue((self.target/'tracking/state.json').exists())
+        self.assertIn('@AGENTS.md',(self.target/'CLAUDE.md').read_text(encoding='utf-8'))
+
+    def test_claude_only_excludes_codex_config(self):
+        init.setup(self.target, 'Claude', 'new', False, 'claude')
+        self.assertTrue((self.target/'CLAUDE.md').exists())
+        self.assertTrue((self.target/'.claude/settings.json').exists())
+        self.assertFalse((self.target/'.codex').exists())
+        self.assertFalse((self.target/'START-CODEX.md').exists())
+        self.assertTrue((self.target/'tracking/state.json').exists())
+
+    def test_codex_only_excludes_claude_config(self):
+        init.setup(self.target, 'Codex', 'new', False, 'codex')
+        self.assertFalse((self.target/'CLAUDE.md').exists())
+        self.assertFalse((self.target/'.claude').exists())
+        self.assertTrue((self.target/'.codex/agents/reviewer.toml').exists())
+        self.assertTrue((self.target/'tracking/state.json').exists())
+
+    def test_claude_settings_is_parseable_and_no_bypass(self):
+        import json
+        init.setup(self.target, 'Claude', 'new', False, 'claude')
+        cfg=json.loads((self.target/'.claude/settings.json').read_text(encoding='utf-8'))
+        self.assertEqual(cfg['permissions']['defaultMode'],'default')
+        self.assertEqual(cfg['permissions']['disableBypassPermissionsMode'],'disable')
+
     def test_existing_file_is_never_overwritten(self):
         self.target.mkdir()
         (self.target/'AGENTS.md').write_text('my personal AGENTS',encoding='utf-8')

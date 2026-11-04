@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "defaultMode": "default",
+    "additionalDirectories": [],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./.git/config)"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  }
+}
