@@ -1,0 +1,19 @@
+# Open the project root in Codex Desktop (Local workspace) and verify effective permissions.
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+approval_policy = "never"
+
+[sandbox_workspace_write]
+# Safe default: command network access is disabled. Git push needs a deliberately
+# enabled network path / Git integration and configured remote/authentication.
+network_access = false
+exclude_slash_tmp = true
+exclude_tmpdir_env_var = true
+writable_roots = []
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "high"

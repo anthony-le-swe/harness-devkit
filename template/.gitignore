@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+.DS_Store
+Thumbs.db
+tests/.scratch/
+tracking/backups/
+.codex-resume-backups/

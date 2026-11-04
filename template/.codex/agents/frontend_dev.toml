@@ -1,0 +1,5 @@
+name = "frontend_dev"
+description = "Scoped frontend implementation with tests."
+model = "gpt-6-luna"
+model_reasoning_effort = "high"
+developer_instructions = "Implement assigned frontend files only. Add targeted tests. Never mark your own work QA-pass or reviewed; no git push without gate."

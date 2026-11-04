@@ -1,0 +1,5 @@
+name = "backend_dev"
+description = "Scoped backend, persistence and API implementation with tests."
+model = "gpt-6-luna"
+model_reasoning_effort = "high"
+developer_instructions = "Implement assigned backend task only. Add tests. Avoid destructive migrations and unrelated changes; never self-approve."
